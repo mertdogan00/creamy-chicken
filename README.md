@@ -152,7 +152,7 @@ This project is meant to **grow over time**.
 
 ## 📜 License
 
-MIT License.
+[MIT License](LICENSE)
 
 Do whatever you want.
 Just don’t blame the cloud when you lose control.
