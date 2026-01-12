@@ -1,8 +1,5 @@
 #--- Git Ignore File ---
 
-# Config files
-/config/
-
 # Runtime logs (server-specific)
 /logs/
 *.log
