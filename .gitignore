@@ -1,0 +1,21 @@
+#--- Git Ignore File ---
+
+# Config files
+/config/
+
+# Runtime logs (server-specific)
+/logs/
+*.log
+
+# State / temporary files
+/.state/
+
+# Secrets & sensitive config
+config/secrets.conf
+*.env
+*.key
+*.pem
+
+# Agent state files
+AGENT.md
+.agent/*
