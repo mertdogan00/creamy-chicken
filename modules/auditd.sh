@@ -14,7 +14,7 @@ fi
 if ! command -v auditctl >/dev/null 2>&1; then
   info "auditd not found. Installing..."
   apt-get update
-  apt-get install -y auditd audispd-plugins
+  apt-get install -y auditd
 fi
 
 # Ensure rules directory exists
