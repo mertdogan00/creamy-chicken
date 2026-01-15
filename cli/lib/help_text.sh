@@ -7,7 +7,7 @@ list_profiles() {
     [[ -f "$file" ]] || continue
     name="${file##*/}"
     name="${name%.conf}"
-    desc="$(sed -n 's/^#--- \(.*\) ---#/\1/p' "$file" | head -n 1)"
+    desc="$(sed -nE 's/^# *--- *(.*) *--- *#/\1/p' "$file" | head -n 1)"
     [[ -z "$desc" ]] && desc="-"
     printf "  %-20s %s\n" "$name" "$desc"
   done
@@ -19,7 +19,7 @@ list_modules() {
     [[ -f "$file" ]] || continue
     name="${file##*/}"
     name="${name%.sh}"
-    desc="$(sed -n 's/^#--- \(.*\) ---#/\1/p' "$file" | head -n 1)"
+    desc="$(sed -nE 's/^# *--- *(.*) *--- *#/\1/p' "$file" | head -n 1)"
     [[ -z "$desc" ]] && desc="-"
     printf "  %-20s %s\n" "$name" "$desc"
   done
