@@ -16,3 +16,6 @@ config/secrets.conf
 # Agent state files
 AGENT.md
 .agent/*
+
+# Notes
+notes*
