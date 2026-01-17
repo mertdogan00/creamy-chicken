@@ -23,10 +23,11 @@ short_hostname="${HOSTNAME%%.*}"
 hosts_file="/etc/hosts"
 
 cat > "$hosts_file" <<EOF
-127.0.0.1 localhost
-::1 localhost ip6-localhost ip6-loopback
-127.0.1.1 $HOSTNAME $short_hostname
-::1 $HOSTNAME $short_hostname
+127.0.0.1   localhost
+127.0.1.1   $HOSTNAME $short_hostname
+
+::1         localhost ip6-localhost ip6-loopback
+::1         $HOSTNAME $short_hostname
 EOF
 
 mark_done "hostname"
