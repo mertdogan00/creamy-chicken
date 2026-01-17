@@ -59,7 +59,8 @@ findtime = 10m
 bantime = 15m
 EOF
 
-# Restart and enable Fail2Ban service
+# Restart and enable Fail2Ban service so settings take effect
 systemctl enable --now fail2ban
+systemctl restart fail2ban
 info "Fail2Ban enabled."
 mark_done "fail2ban"
