@@ -123,15 +123,7 @@ tail -n 5 /var/log/msmtp.log
 ```
 Expected: No error from msmtp; log shows a successful send. Replace `to_addr`.
 
-## 13. rclone
-Why: Ensures rclone is installed and configured.
-```bash
-rclone version
-test -f /root/.config/rclone/rclone.conf
-```
-Expected: version prints; config file exists if `rclone config` was run.
-
-## 14. docker
+## 13. docker
 Why: Confirms Docker is installed, running, and logging is configured.
 ```bash
 docker --version
@@ -140,7 +132,7 @@ cat /etc/docker/daemon.json
 ```
 Expected: version prints, service `active`, log limits set in daemon.json.
 
-## 15. dockge
+## 14. dockge
 Why: Confirms Dockge container is running and directories exist.
 ```bash
 test -d "$DOCKGE_VOLUMES_DIR"
@@ -149,14 +141,14 @@ docker ps --format '{{.Names}}' | grep -x dockge
 ```
 Expected: volumes dir exists, compose shows `dockge` running, container listed.
 
-## 16. backup
+## 15. backup
 Why: Verifies restic can access the repository.
 ```bash
 restic -r "$BACKUP_REPO" snapshots
 ```
 Expected: snapshot list appears if `BACKUP_ENABLED=yes`.
 
-## 17. restore
+## 16. restore
 Why: Confirms restore target directory has files.
 ```bash
 ls -la "$RESTORE_TARGET_DIR"

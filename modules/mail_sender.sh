@@ -19,7 +19,9 @@ fi
 if ! command -v msmtp >/dev/null 2>&1; then
   info "msmtp not found. Installing..."
   apt-get update
-  apt-get install -y msmtp msmtp-mta
+  echo "msmtp-mta msmtp-mta/apparmor boolean false" | debconf-set-selections
+  apt-get install -y msmtp msmtp-mta ca-certificates
+
 fi
 
 cat > /etc/msmtprc <<EOF
@@ -38,6 +40,8 @@ logfile $msmtp_logfile
 EOF
 
 chmod 0600 /etc/msmtprc
+msmtp_logdir="$(dirname "$msmtp_logfile")"
+mkdir -p "$msmtp_logdir"
 touch "$msmtp_logfile"
 chmod 0600 "$msmtp_logfile"
 
