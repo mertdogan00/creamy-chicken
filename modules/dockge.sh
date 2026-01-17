@@ -26,7 +26,6 @@ dockge_volumes_dir="${DOCKGE_VOLUMES_DIR:-/opt/volumes}"
 mkdir -p "$dockge_stacks_dir" "$dockge_data_dir" "$dockge_volumes_dir"
 
 cat > "$dockge_data_dir/docker-compose.yml" <<EOF
-version: "3.8"
 services:
   dockge:
     image: louislam/dockge:latest
