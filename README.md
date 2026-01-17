@@ -102,6 +102,12 @@ nano profiles/setup.conf
 ./run.sh --profile setup
 ```
 
+4. Verify modules (optional):
+
+```bash
+cat CHECK.md
+```
+
 That’s it.
 
 No dashboards.

@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 
 - Add DOCKGE_VOLUMES_DIR config and create the directory during Dockge setup
+- Add `CHECK.md` with per-module verification commands and expected results
 
 ## [1.1.0] - 2026-01-15
 
