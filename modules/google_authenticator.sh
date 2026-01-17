@@ -3,12 +3,28 @@
 
 info "Configuring Google Authenticator (SSH 2FA)..."
 
+# Check if security enabled
+if [[ "${ENABLE_SECURITY:-no}" != "yes" ]]; then
+  info "ENABLE_SECURITY is not yes. Skipping 2FA setup."
+  mark_done "google_authenticator"
+  return
+fi
+
+# Check if 2FA is enabled
 if [[ "${ENABLE_2FA:-no}" != "yes" ]]; then
   info "ENABLE_2FA is not yes. Skipping 2FA setup."
   mark_done "google_authenticator"
   return
 fi
 
+# Check if google-authenticator command exists
+if ! command -v google-authenticator >/dev/null 2>&1; then
+  info "google-authenticator not found. Installing..."
+  apt-get update
+  apt-get install -y libpam-google-authenticator
+fi
+
+# Check if USER_NAME is set and exists
 if [[ -z "$USER_NAME" ]]; then
   error "USER_NAME is empty. Cannot configure 2FA."
   exit 1
@@ -19,25 +35,26 @@ if ! id -u "$USER_NAME" >/dev/null 2>&1; then
   exit 1
 fi
 
-if ! command -v google-authenticator >/dev/null 2>&1; then
-  info "google-authenticator not found. Installing..."
-  apt-get update
-  apt-get install -y libpam-google-authenticator
-fi
-
+# user home directory
 user_home="$(getent passwd "$USER_NAME" | cut -d: -f6)"
+
+# 2fa file path
 ga_file="$user_home/.google_authenticator"
 
+# Generate 2FA secret if not exists
 if [[ ! -f "$ga_file" ]]; then
   info "Generating 2FA secret for $USER_NAME..."
-  sudo -u "$USER_NAME" google-authenticator -t -d -f -r 3 -R 30 -W -q
+  sudo -u "$USER_NAME" google-authenticator -t -d -f -r 3 -R 30 -w 1 -q
+
 fi
 
+# Configure PAM for Google Authenticator
 pam_file="/etc/pam.d/sshd"
 if ! grep -q "pam_google_authenticator.so" "$pam_file"; then
   printf "\nauth required pam_google_authenticator.so\n" >> "$pam_file"
 fi
 
+# Configure SSHD for ChallengeResponseAuthentication and KbdInteractiveAuthentication
 sshd_config="/etc/ssh/sshd_config"
 if [[ -f "$sshd_config" ]]; then
   if grep -q "^#\\?ChallengeResponseAuthentication" "$sshd_config"; then
@@ -55,6 +72,7 @@ else
   exit 1
 fi
 
+# Restart SSHD to apply changes
 systemctl restart sshd
 info "SSH 2FA configured."
 

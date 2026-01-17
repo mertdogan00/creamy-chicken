@@ -3,18 +3,21 @@
 
 info "Configuring Docker..."
 
+# Check if Docker installation is requested
 if [[ "$INSTALL_DOCKER" != "yes" ]]; then
   info "INSTALL_DOCKER is not yes. Skipping Docker setup."
   mark_done "docker"
   return
 fi
 
+# Ensure curl is installed
 if ! command -v curl >/dev/null 2>&1; then
   info "curl not found. Installing..."
   apt-get update
   apt-get install -y curl
 fi
 
+# Install Docker if not already installed
 if command -v docker >/dev/null 2>&1; then
   info "Docker already installed."
 else
@@ -22,6 +25,7 @@ else
   curl -fsSL https://get.docker.com | sh
 fi
 
+# Configure Docker logging limits
 info "Configuring Docker logging limits..."
 mkdir -p /etc/docker
 cat > /etc/docker/daemon.json <<'EOF'
@@ -34,6 +38,7 @@ cat > /etc/docker/daemon.json <<'EOF'
 }
 EOF
 
+# Enable and restart Docker service
 systemctl enable --now docker
 systemctl restart docker
 info "Docker installed and enabled."

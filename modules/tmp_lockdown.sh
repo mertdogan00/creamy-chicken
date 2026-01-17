@@ -12,16 +12,19 @@ fi
 fstab="/etc/fstab"
 desired_opts="defaults,noexec,nosuid,nodev"
 
+# Check if /tmp is already in /etc/fstab
 if ! awk -v mnt="/tmp" '($2==mnt){found=1} END{exit !found}' "$fstab"; then
   printf "%s\n" "tmpfs /tmp tmpfs $desired_opts 0 0" >> "$fstab"
 fi
 
+# Remount /tmp with the desired options
 if mountpoint -q /tmp; then
   mount -o remount,nodev,nosuid,noexec /tmp
 else
   mount /tmp
   mount -o remount,nodev,nosuid,noexec /tmp
 fi
+
 info "/tmp remounted with nodev,nosuid,noexec."
 
 mark_done "tmp_lockdown"

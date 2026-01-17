@@ -1,26 +1,26 @@
 # path: modules/auditd.sh
-#--- Auditd Setup ---#
+#--- Auditd Setup (Modern Baseline) ---#
 
 info "Configuring auditd..."
 
-# Security toggle
+# --- Security toggle ---
 if [[ "$ENABLE_SECURITY" != "yes" ]]; then
   info "Security is disabled. Skipping auditd setup."
   mark_done "auditd"
   return
 fi
 
-# Install auditd if missing
+# --- Install auditd if missing ---
 if ! command -v auditctl >/dev/null 2>&1; then
   info "auditd not found. Installing..."
   apt-get update
   apt-get install -y auditd
 fi
 
-# Ensure rules directory exists
+# --- Ensure rules directory ---
 mkdir -p /etc/audit/rules.d
 
-# Write baseline audit rules
+# --- Baseline audit rules ---
 cat > /etc/audit/rules.d/10-baseline.rules <<'EOF'
 ############################
 # Auditd Baseline Ruleset #
@@ -33,34 +33,39 @@ cat > /etc/audit/rules.d/10-baseline.rules <<'EOF'
 -w /etc/gshadow  -p wa -k identity
 
 # --- Privilege escalation ---
--w /etc/sudoers      -p wa -k scope
--w /etc/sudoers.d/   -p wa -k scope
+-w /etc/sudoers     -p wa -k scope
+-w /etc/sudoers.d/  -p wa -k scope
 
 # --- SSH configuration ---
 -w /etc/ssh/sshd_config -p wa -k sshd
 
 # --- Network configuration ---
--w /etc/hosts        -p wa -k network
--w /etc/hostname     -p wa -k network
--w /etc/resolv.conf  -p wa -k network
+-w /etc/hosts       -p wa -k network
+-w /etc/hostname    -p wa -k network
+-w /etc/resolv.conf -p wa -k network
 
-# --- Time changes ---
+# --- Time changes (b64 + b32) ---
 -a always,exit -F arch=b64 -S adjtimex -S settimeofday -S clock_settime -k time-change
+-a always,exit -F arch=b32 -S adjtimex -S settimeofday -S clock_settime -k time-change
 
 # --- Hostname / domain changes ---
 -a always,exit -F arch=b64 -S sethostname -S setdomainname -k system-locale
+-a always,exit -F arch=b32 -S sethostname -S setdomainname -k system-locale
 
 # --- Kernel module loading/unloading ---
 -a always,exit -F arch=b64 -S init_module -S delete_module -k kernel-modules
+-a always,exit -F arch=b32 -S init_module -S delete_module -k kernel-modules
 
-# --- Service management ---
--a always,exit -F path=/usr/bin/systemctl -F perm=x -k service-control
+# --- Service control via systemctl ---
+-a always,exit -F arch=b64 -S execve -F exe=/usr/bin/systemctl -k service-control
+-a always,exit -F arch=b32 -S execve -F exe=/usr/bin/systemctl -k service-control
 
 # --- Reboot / shutdown ---
 -a always,exit -F arch=b64 -S reboot -S shutdown -k system-power
+-a always,exit -F arch=b32 -S reboot -S shutdown -k system-power
 EOF
 
-# Configure logrotate for audit logs
+# --- Logrotate for audit logs ---
 cat > /etc/logrotate.d/auditd <<'EOF'
 /var/log/audit/audit.log {
   daily
@@ -72,21 +77,23 @@ cat > /etc/logrotate.d/auditd <<'EOF'
   create 0600 root root
   sharedscripts
   postrotate
-    /sbin/service auditd rotate >/dev/null 2>&1 || true
+    /bin/systemctl kill -s SIGUSR1 auditd >/dev/null 2>&1 || true
   endscript
 }
 EOF
 
-# Enable and start auditd
+# --- Enable auditd (do NOT hard restart blindly) ---
 systemctl enable auditd
-systemctl restart auditd
 
-# Load rules
+# --- Load rules safely ---
 if command -v augenrules >/dev/null 2>&1; then
   augenrules --load
 else
   auditctl -R /etc/audit/rules.d/10-baseline.rules
 fi
 
-info "auditd configured successfully."
+# --- Ensure auditd is running ---
+systemctl restart auditd
+
+info "auditd configured successfully (modern baseline)."
 mark_done "auditd"
