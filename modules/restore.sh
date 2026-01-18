@@ -1,62 +1,90 @@
 # path: modules/restore.sh
-#--- Restore from tar ---#
+#--- Restore from restic (optionally via rclone backend) ---#
 
-info "Restoring from tar..."
+set -euo pipefail
 
-# Configuration
+info "Running restore setup..."
+
+# =========================================================
+# Load configuration
+# =========================================================
 restore_enabled="${RESTORE_ENABLED:-no}"
-restore_tar="${RESTORE_TAR_PATH:-}"
-restore_target="${RESTORE_TARGET_DIR:-/opt}"
+restore_target="${RESTORE_TARGET_DIR:-}"
+restore_snapshot="${RESTORE_SNAPSHOT:-latest}"
+restore_repo="${RESTORE_REPO:-}"
+restore_password="${RESTORE_PASSWORD:-}"
+rclone_config_path="${RESTORE_RCLONE_CONFIG_PATH:-}"
+remote_repo_re='^(rclone|s3|sftp|b2|azure|gs|swift|rest):'
 
-# Check if restore is enabled
+# =========================================================
+# Enable check
+# =========================================================
 if [[ "$restore_enabled" != "yes" ]]; then
-  info "RESTORE_ENABLED is not yes. Skipping restore."
-  mark_done "restore"
+  info "Restore disabled. Skipping."
+  mark_done restore
   return
 fi
 
-# Validate restore tar path
-if [[ -z "$restore_tar" || ! -f "$restore_tar" ]]; then
-  error "Restore tar not found: $restore_tar"
+# =========================================================
+# Validation
+# =========================================================
+[[ -n "$restore_target" ]] || {
+  error "RESTORE_TARGET_DIR missing."
   exit 1
+}
+[[ -n "$restore_repo" ]] || {
+  error "RESTORE_REPO missing (required for restore). Use rclone:REMOTE:PATH for Drive."
+  exit 1
+}
+[[ -n "$restore_password" ]] || {
+  error "RESTORE_PASSWORD missing (required for restore)."
+  exit 1
+}
+if [[ "$restore_repo" =~ $remote_repo_re ]]; then
+  [[ -n "$rclone_config_path" && -f "$rclone_config_path" ]] || {
+    error "RESTORE_RCLONE_CONFIG_PATH missing or file not found."
+    exit 1
+  }
+  chmod 600 "$rclone_config_path"
 fi
 
- # Ensure target directory exists
-if [[ ! -d "$restore_target" ]]; then
-  mkdir -p "$restore_target"
+# =========================================================
+# Dependencies
+# =========================================================
+apt-get update -qq
+command -v restic >/dev/null || apt-get install -y restic
+
+# rclone is only needed for remote repos
+if [[ "$restore_repo" =~ $remote_repo_re ]]; then
+  command -v rclone >/dev/null || apt-get install -y rclone
 fi
 
+# =========================================================
+# Prepare environment
+# =========================================================
+export RESTIC_PASSWORD="$restore_password"
+if [[ -n "$rclone_config_path" ]]; then
+  export RCLONE_CONFIG="$rclone_config_path"
+fi
+
+# =========================================================
+# Ensure target directory
+# =========================================================
+mkdir -p "$restore_target"
+
+# DANGEROUS but intentional: clean the target directory
+info "Cleaning restore target: $restore_target"
 rm -rf "${restore_target:?}/"*
 
-# Extract the tar based on its extension
-case "$restore_tar" in
-  *.tar.gz|*.tgz)
-    tar -xzf "$restore_tar" -C "$restore_target"
-    ;;
-  *.tar.bz2|*.tbz2)
-    tar -xjf "$restore_tar" -C "$restore_target"
-    ;;
-  *.tar.xz|*.txz)
-    tar -xJf "$restore_tar" -C "$restore_target"
-    ;;
-  *.tar)
-    tar -xf "$restore_tar" -C "$restore_target"
-    ;;
-  *.zip)
-    if ! command -v unzip >/dev/null 2>&1; then
-      info "unzip not found. Installing..."
-      apt-get update
-      apt-get install -y unzip
-    fi
-    unzip -q "$restore_tar" -d "$restore_target"
-    ;;
-  *)
-    error "Unsupported archive type: $restore_tar"
-    exit 1
-    ;;
-esac
+# =========================================================
+# Restore
+# =========================================================
+info "Restoring from repo: $restore_repo (use rclone:REMOTE:PATH for Drive)"
+info "Restoring snapshot '$restore_snapshot' to $restore_target"
 
+restic -r "$restore_repo" restore "$restore_snapshot" \
+  --target "$restore_target"
 
-info "Restore completed: $restore_target"
+info "Restore completed successfully: $restore_target"
 
-mark_done "restore"
+mark_done restore

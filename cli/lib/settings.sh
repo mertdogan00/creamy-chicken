@@ -2,7 +2,7 @@
 #--- CLI defaults ---#
 
 PROFILE="setup"
-APP_VERSION="1.1.2"
+APP_VERSION="2.0.0"
 RESET_MODULES=()
 FORCE_MODULES=()
 ONLY_MODULES=()

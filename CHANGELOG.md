@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.0.0] - 2026-01-18
+
+### Added
+
+- Systemd-backed daily backup scheduling with a dedicated runner script
+- Backup schedule configuration (`BACKUP_SCHEDULE`)
+- Restore snapshot selection (`RESTORE_SNAPSHOT`)
+- Restore repo/password config (`RESTORE_REPO`, `RESTORE_PASSWORD`)
+- rclone config path support for backup and restore (`RCLONE_CONFIG_PATH`, `RESTORE_RCLONE_CONFIG_PATH`)
+
+### Changed
+
+- Backup flow now writes a shared env file and validates config more strictly
+- Restore flow uses restic directly against the configured repo
+- Restore settings are now independent from backup settings
+- Clarified backup/restore configuration notes in global config
+
+### Removed
+
+- `RESTORE_TAR_PATH` legacy restore option
+
 ## [1.1.2] - 2026-01-17
 
 ### Added
