@@ -75,6 +75,9 @@ mkdir -p "$restore_target"
 
 # DANGEROUS but intentional: clean target directory
 info "Cleaning restore target: $restore_target"
+restore_target_clean="${restore_target%/}"
+[[ -n "$restore_target_clean" && "$restore_target_clean" != "/" ]] || \
+  die "Refusing to wipe root directory: RESTORE_TARGET_DIR=$restore_target"
 rm -rf "${restore_target:?}/"*
 
 # =========================================================
