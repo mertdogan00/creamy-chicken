@@ -88,7 +88,9 @@ info "Repo: $restore_repo"
 info "Target: $restore_target"
 
 restic -r "$restore_repo" restore "$restore_snapshot" \
-  --target "$restore_target"
+  --target /opt \
+  --strip-path /opt
+
 
 info "Restore completed successfully: $restore_target"
 
