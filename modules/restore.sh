@@ -88,9 +88,22 @@ info "Repo: $restore_repo"
 info "Target: $restore_target"
 
 restic -r "$restore_repo" restore "$restore_snapshot" \
-  --target /opt \
-  --strip-path /opt
+  --target "$restore_target"
 
+# ---------------------------------------------------------
+# Flatten nested restore (avoid opt/opt, var/var, etc.)
+# ---------------------------------------------------------
+nested_dir="${restore_target%/}/${restore_target_clean#/}"
+
+if [[ -d "$nested_dir" ]]; then
+  info "Nested directory detected: $nested_dir"
+  info "Flattening restore structure..."
+
+  shopt -s dotglob nullglob
+  mv "$nested_dir"/* "$restore_target"/
+  shopt -u dotglob nullglob
+  rm -rf "$nested_dir"
+fi
 
 info "Restore completed successfully: $restore_target"
 
