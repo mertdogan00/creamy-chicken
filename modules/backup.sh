@@ -46,6 +46,11 @@ remote_repo_re='^(rclone|s3|sftp|b2|azure|gs|swift|rest):'
 [[ -n "$backup_repo" ]]   || die "BACKUP_REPO missing"
 [[ -n "$backup_password" ]] || die "BACKUP_PASSWORD missing"
 
+# create local repo directory if needed
+if [[ ! "$backup_repo" =~ $remote_repo_re ]]; then
+  mkdir -p "$backup_repo"
+fi
+
 # schedule format HH:MM
 if [[ -n "$backup_schedule" ]] &&
    [[ ! "$backup_schedule" =~ ^([01]?[0-9]|2[0-3]):[0-5][0-9]$ ]]; then
