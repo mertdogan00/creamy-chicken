@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.0] - 2026-01-19
+
+### Added
+
+- Backup log file output with logrotate rotation
+- Backup retention knobs (`BACKUP_KEEP_DAILY`, `BACKUP_KEEP_WEEKLY`, `BACKUP_KEEP_MONTHLY`)
+- Backup schedule defaults in global configs (`BACKUP_SCHEDULE`)
+- Focused backup/restore verification guide in `CHECK.md`
+
+### Changed
+
+- Backup setup now creates local repo directories when needed
+- Restore cleanup guard refuses to wipe `/`
+- Default backup repo path in global configs is `/backups/restic`
+
+### Removed
+
+- `BACKUP_KEEP` legacy retention setting from configs
+
 ## [2.0.0] - 2026-01-18
 
 ### Added

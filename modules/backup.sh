@@ -21,6 +21,7 @@ backup_password="${BACKUP_PASSWORD:-}"
 backup_keep_daily="${BACKUP_KEEP_DAILY:-7}"
 backup_keep_weekly="${BACKUP_KEEP_WEEKLY:-4}"
 backup_keep_monthly="${BACKUP_KEEP_MONTHLY:-6}"
+backup_keep_yearly="${BACKUP_KEEP_YEARLY:-1}"
 
 backup_rclone_remote="${BACKUP_RCLONE_REMOTE:-}"
 backup_rclone_path="${BACKUP_RCLONE_PATH:-}"
@@ -58,7 +59,7 @@ if [[ -n "$backup_schedule" ]] &&
 fi
 
 # retention must be numeric
-for v in backup_keep_daily backup_keep_weekly backup_keep_monthly; do
+for v in backup_keep_daily backup_keep_weekly backup_keep_monthly backup_keep_yearly; do
   [[ "${!v}" =~ ^[0-9]+$ ]] || die "$v must be a number"
 done
 
@@ -103,6 +104,7 @@ BACKUP_PASSWORD="$backup_password"
 BACKUP_KEEP_DAILY="$backup_keep_daily"
 BACKUP_KEEP_WEEKLY="$backup_keep_weekly"
 BACKUP_KEEP_MONTHLY="$backup_keep_monthly"
+BACKUP_KEEP_YEARLY="$backup_keep_yearly"
 
 BACKUP_RCLONE_REMOTE="$backup_rclone_remote"
 BACKUP_RCLONE_PATH="$backup_rclone_path"
@@ -150,6 +152,7 @@ restic -r "$BACKUP_REPO" forget \
   --keep-daily "$BACKUP_KEEP_DAILY" \
   --keep-weekly "$BACKUP_KEEP_WEEKLY" \
   --keep-monthly "$BACKUP_KEEP_MONTHLY" \
+  --keep-yearly "$BACKUP_KEEP_YEARLY" \
   --prune
 
 # optional rclone sync
@@ -162,6 +165,26 @@ EOF
 chmod 700 /usr/local/bin/creamy-chicken-backup
 
 # --------------------
+# Logs (file + logrotate)
+# --------------------
+install -d -m 750 /var/log/creamy-chicken
+touch /var/log/creamy-chicken/backup.log
+chmod 640 /var/log/creamy-chicken/backup.log
+
+cat > /etc/logrotate.d/creamy-chicken-backup <<'EOF'
+/var/log/creamy-chicken/backup.log {
+  daily
+  rotate 14
+  missingok
+  notifempty
+  compress
+  delaycompress
+  create 0640 root root
+  copytruncate
+}
+EOF
+
+# --------------------
 # Systemd timer
 # --------------------
 if [[ -n "$backup_schedule" ]]; then
@@ -169,6 +192,8 @@ if [[ -n "$backup_schedule" ]]; then
 [Service]
 Type=oneshot
 ExecStart=/usr/local/bin/creamy-chicken-backup
+StandardOutput=append:/var/log/creamy-chicken/backup.log
+StandardError=append:/var/log/creamy-chicken/backup.log
 EOF
 
   cat > /etc/systemd/system/creamy-chicken-backup.timer <<EOF
