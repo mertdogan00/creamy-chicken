@@ -1,47 +1,75 @@
 # path: modules/dockge.sh
-#--- Dockge Setup ---#
+#--------------------------------------
+# Dockge Setup
+#--------------------------------------
 
 info "Configuring Dockge..."
 
-# Check if Dockge installation is requested
-if [[ "$INSTALL_DOCKER" != "yes" ]]; then
-  info "INSTALL_DOCKER is not yes. Skipping Dockge setup."
-  mark_done "dockge"
+# -------------------------------------
+# Preconditions
+# -------------------------------------
+if [[ "${INSTALL_DOCKER:-no}" != "yes" ]]; then
+  info "INSTALL_DOCKER is not enabled. Skipping Dockge."
+  mark_done dockge
   return
 fi
 
-# Ensure Docker is installed
 if ! command -v docker >/dev/null 2>&1; then
-  info "Docker not found. Skipping Dockge setup."
-  mark_done "dockge"
+  info "Docker not found. Skipping Dockge."
+  mark_done dockge
   return
 fi
 
-dockge_port="${DOCKGE_PORT:-5001}"
+# -------------------------------------
+# Configuration
+# -------------------------------------
+DOCKGE_PORT="${DOCKGE_PORT:-5001}"
 
-dockge_stacks_dir="${DOCKGE_STACKS_DIR:-/opt/stacks}"
-dockge_data_dir="${DOCKGE_DATA_DIR:-/opt/dockge}"
-dockge_volumes_dir="${DOCKGE_VOLUMES_DIR:-/opt/volumes}"
+DOCKGE_STACKS_DIR="${DOCKGE_STACKS_DIR:-/opt/stacks}"
+DOCKGE_DATA_DIR="${DOCKGE_DATA_DIR:-/opt/dockge}"
+DOCKGE_VOLUMES_DIR="${DOCKGE_VOLUMES_DIR:-/opt/volumes}"
 
-mkdir -p "$dockge_stacks_dir" "$dockge_data_dir" "$dockge_volumes_dir"
+DOCKGE_ENABLE_CONSOLE="${DOCKGE_ENABLE_CONSOLE:-}"
 
-cat > "$dockge_data_dir/docker-compose.yml" <<EOF
+COMPOSE_FILE="${DOCKGE_DATA_DIR}/docker-compose.yml"
+
+# -------------------------------------
+# Prepare directories
+# -------------------------------------
+mkdir -p \
+  "$DOCKGE_STACKS_DIR" \
+  "$DOCKGE_DATA_DIR" \
+  "$DOCKGE_VOLUMES_DIR"
+
+# -------------------------------------
+# Generate docker-compose.yml
+# -------------------------------------
+cat > "$COMPOSE_FILE" <<EOF
 services:
   dockge:
     image: louislam/dockge:latest
     container_name: dockge
     restart: unless-stopped
     ports:
-      - "${dockge_port}:5001"
+      - "${DOCKGE_PORT}:5001"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ${dockge_data_dir}:/app/data
-      - ${dockge_stacks_dir}:${dockge_stacks_dir}
+      - ${DOCKGE_DATA_DIR}:/app/data
+      - ${DOCKGE_STACKS_DIR}:${DOCKGE_STACKS_DIR}
     environment:
-      - DOCKGE_STACKS_DIR=${dockge_stacks_dir}
+      - DOCKGE_STACKS_DIR=${DOCKGE_STACKS_DIR}
 EOF
 
-info "Starting Dockge..."
-docker compose -f "$dockge_data_dir/docker-compose.yml" up -d
+if [[ -n "$DOCKGE_ENABLE_CONSOLE" ]]; then
+  cat >> "$COMPOSE_FILE" <<EOF
+      - DOCKGE_ENABLE_CONSOLE=${DOCKGE_ENABLE_CONSOLE}
+EOF
+fi
 
-mark_done "dockge"
+# -------------------------------------
+# Start Dockge
+# -------------------------------------
+info "Starting Dockge..."
+docker compose -f "$COMPOSE_FILE" up -d
+
+mark_done dockge
