@@ -17,6 +17,7 @@ backup_enabled="${BACKUP_ENABLED:-no}"
 backup_source="${BACKUP_SOURCE_DIR:-}"
 backup_repo="${BACKUP_REPO:-}"
 backup_password="${BACKUP_PASSWORD:-}"
+backup_xdg_cache_home="${BACKUP_XDG_CACHE_HOME:-}"
 
 backup_keep_daily="${BACKUP_KEEP_DAILY:-7}"
 backup_keep_weekly="${BACKUP_KEEP_WEEKLY:-4}"
@@ -100,6 +101,7 @@ cat > /etc/creamy-chicken/backup.env <<EOF
 BACKUP_SOURCE_DIR="$backup_source"
 BACKUP_REPO="$backup_repo"
 BACKUP_PASSWORD="$backup_password"
+BACKUP_XDG_CACHE_HOME="$backup_xdg_cache_home"
 
 BACKUP_KEEP_DAILY="$backup_keep_daily"
 BACKUP_KEEP_WEEKLY="$backup_keep_weekly"
@@ -126,6 +128,14 @@ ENV=/etc/creamy-chicken/backup.env
 set -a
 source "$ENV"
 set +a
+
+export HOME="${HOME:-/root}"
+if [[ -n "${BACKUP_XDG_CACHE_HOME:-}" ]]; then
+  export XDG_CACHE_HOME="$BACKUP_XDG_CACHE_HOME"
+else
+  export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+fi
+install -d -m 700 "$XDG_CACHE_HOME"
 
 export RESTIC_PASSWORD="$BACKUP_PASSWORD"
 
